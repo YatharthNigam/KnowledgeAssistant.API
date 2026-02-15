@@ -1,0 +1,6 @@
+@KnowledgeAssistant.API_HostAddress = http://localhost:5068
+
+GET {{KnowledgeAssistant.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
