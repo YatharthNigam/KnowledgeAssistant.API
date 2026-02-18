@@ -20,9 +20,9 @@ namespace KnowledgeAssistant.API.Controllers
         public async Task<IActionResult> AskAI([FromBody] string userQuestion)
         {
             // 1. Get secrets
-            string endpoint = _configuration["AzureOpenAI:Endpoint"];
-            string key = _configuration["AzureOpenAI:ApiKey"];
-            string deploymentName = _configuration["AzureOpenAI:DeploymentName"];
+            string endpoint = _configuration["AzureOpenAI:Chat:Endpoint"];
+            string key = _configuration["AzureOpenAI:Chat:ApiKey"];
+            string deploymentName = _configuration["AzureOpenAI:Chat:DeploymentName"];
 
             // 2. Create Client
             AzureOpenAIClient azureClient = new(new Uri(endpoint), new AzureKeyCredential(key));

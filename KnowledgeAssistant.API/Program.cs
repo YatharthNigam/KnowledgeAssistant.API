@@ -2,6 +2,22 @@ using KnowledgeAssistant.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Debug: Verify secrets are loading (Only in Development)
+if (builder.Environment.IsDevelopment())
+{
+    var chatKey = builder.Configuration["AzureOpenAI:Chat:ApiKey"];
+    var dbConn = builder.Configuration.GetConnectionString("DefaultConnection");
+
+    if (string.IsNullOrEmpty(chatKey) || chatKey.Contains("PLACEHOLDER"))
+    {
+        Console.WriteLine("⚠️ WARNING: Secrets not loaded correctly!");
+    }
+    else
+    {
+        Console.WriteLine("✅ SUCCESS: User Secrets loaded.");
+    }
+}
+
 // Add services to the container.
 
 builder.Services.AddControllers();
