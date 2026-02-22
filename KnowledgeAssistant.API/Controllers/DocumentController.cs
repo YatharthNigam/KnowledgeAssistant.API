@@ -46,8 +46,9 @@ namespace KnowledgeAssistant.API.Controllers
         }
 
         [HttpPost("ingest")]
-        public async Task<IActionResult> IngestDocument([FromBody] string textContent)
+        public async Task<IActionResult> IngestDocument([FromBody] string textContent, [FromHeader(Name = "X-Session-ID")] string sessionId)
         {
+            if (string.IsNullOrEmpty(sessionId)) return BadRequest("Session ID is missing.");
             // 1. Convert Text -> Numbers (Vector)
             var vector = await _embeddingService.GetEmbeddingAsync(textContent);
 
@@ -62,14 +63,15 @@ namespace KnowledgeAssistant.API.Controllers
             using (var conn = new SqlConnection(connectionString))
             {
                 string sql = @"
-                    INSERT INTO Documents (FileName, Content, Embedding)
-                    VALUES (@FileName, @Content, CAST(@VectorJson AS VECTOR(1536)))";
+                    INSERT INTO Documents (FileName, Content, Embedding, SessionId)
+                    VALUES (@FileName, @Content, CAST(@VectorJson AS VECTOR(1536)), @SessionId)";
 
                 await conn.ExecuteAsync(sql, new
                 {
                     FileName = "Demo_Upload.txt",
                     Content = textContent,
-                    VectorJson = vectorJson
+                    VectorJson = vectorJson,
+                    SessionId = sessionId
                 });
             }
 
@@ -77,8 +79,9 @@ namespace KnowledgeAssistant.API.Controllers
         }
 
         [HttpPost("upload-pdf")]
-        public async Task<IActionResult> UploadPdf(IFormFile file)
+        public async Task<IActionResult> UploadPdf(IFormFile file, [FromHeader(Name = "X-Session-ID")] string sessionId)
         {
+            if (string.IsNullOrEmpty(sessionId)) return BadRequest("Session ID is missing.");
             if (file == null || file.Length == 0)
                 return BadRequest("Please upload a valid PDF file.");
 
@@ -108,17 +111,19 @@ namespace KnowledgeAssistant.API.Controllers
                     var vector = await _embeddingService.GetEmbeddingAsync(chunk);
                     string vectorJson = JsonSerializer.Serialize(vector.ToArray());
 
-                    // Save to SQL
+                    // Save to SQL (vector goes to Embedding column, session id to SessionId column)
                     string sql = @"
-                INSERT INTO Documents (FileName, Content, Embedding) 
-                VALUES (@FileName, @Content, CAST(@VectorJson AS VECTOR(1536)))";
+                    INSERT INTO Documents (FileName, Content, Embedding, SessionId) 
+                    VALUES (@FileName, @Content, CAST(@VectorJson AS VECTOR(1536)), @SessionId)";
 
                     await conn.ExecuteAsync(sql, new
                     {
                         FileName = file.FileName,
                         Content = chunk,
-                        VectorJson = vectorJson
+                        VectorJson = vectorJson,
+                        SessionId = sessionId
                     });
+
                     savedChunks++;
                 }
             }
